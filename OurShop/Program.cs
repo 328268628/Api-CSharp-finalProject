@@ -29,7 +29,7 @@ builder.Services.AddScoped<IRatingRepository, RatingRepository>();
 builder.Services.AddScoped<IRatingServices, RatingServices>();
 
 builder.Services.AddDbContext<AdoNetManageContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("home")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 //builder.Services.AddDbContext<AdoNetManageContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("ConectionString")));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -77,6 +77,15 @@ if (app.Environment.IsDevelopment())
 
 // Configure the HTTP request pipeline.
 app.UseErrorHandlingMiddleware();
+
+// Add Content Security Policy (CSP) header
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("Content-Security-Policy",
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none';");
+    await next();
+});
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
