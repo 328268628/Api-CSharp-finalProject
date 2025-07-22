@@ -75,9 +75,11 @@ const placeOrder = async () => {
             //if (!responsePost.ok) {
             //    throw new Error(`HTTP error! status:${responsePost.status}`)
             //}
-
+            if (responsePost.status == 401)
+                alert("אינך מורשה")
+            
             const dataPost = await responsePost.json();
-
+            
             alert(`${dataPost.id} הזמנה בוצעה בהצלחה `)
             sessionStorage.setItem("shopingBag", JSON.stringify([]))
             sessionStorage.setItem("category", JSON.stringify([]))
