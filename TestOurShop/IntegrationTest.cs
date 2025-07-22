@@ -1,6 +1,8 @@
 ﻿using Entits;
 using Repository;
 using Services;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +27,8 @@ namespace TestOurShop
             var user = new User { Email = "batya@example.com", Password = "b0583272120!!!" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            var userRepository = new UserRepository(_context);
+            var mockLogger = new Mock<ILogger<UserRepository>>();
+            var userRepository = new UserRepository(_context, mockLogger.Object);
 
 
             // Act
@@ -41,7 +44,8 @@ namespace TestOurShop
         public async Task DB_Login_ReturnsNotFound_WhenUserNotFound()
         {
             // Arrange
-            var userRepository = new UserRepository(_context);
+            var mockLogger = new Mock<ILogger<UserRepository>>();
+            var userRepository = new UserRepository(_context, mockLogger.Object);
 
             // Act
             var result = await userRepository.Login("wrongPassword", "nonExistentUser");
@@ -58,8 +62,8 @@ namespace TestOurShop
             var user = new User { Email = "BatyaOzeri.com", Password = "batya3272120@gmail" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-
-            var userRepository = new UserRepository(_context);
+            var mockLogger = new Mock<ILogger<UserRepository>>();
+            var userRepository = new UserRepository(_context, mockLogger.Object);
 
             // Act
             var result = await userRepository.Login("wrongPassword", user.Email);

@@ -4,6 +4,8 @@ using Moq;
 using Moq.EntityFrameworkCore;
 using Repository;
 using Services;
+using Microsoft.Extensions.Logging;
+
 namespace TestOurShop
 {
     public class UnitTest1
@@ -12,19 +14,13 @@ namespace TestOurShop
         private async Task Login_ReturnsOkResult_WithValidUser()
         {
             var user = new User() { Email = "bb@gmail.com", Password = "bo0583272120" };
-
             var mockContext = new Mock<AdoNetManageContext>();
             var users = new List<User>() { user };
             mockContext.Setup(x => x.Users).ReturnsDbSet(users);
-
-            var userRepository = new UserRepository(mockContext.Object);
-
+            var mockLogger = new Mock<ILogger<UserRepository>>();
+            var userRepository = new UserRepository(mockContext.Object, mockLogger.Object);
             var result = await userRepository.Login(user.Email, user.Password);
-
             Assert.Equal(user, result);
-
-
-
         }
 
         [Fact]
@@ -34,11 +30,10 @@ namespace TestOurShop
             var mockContext = new Mock<AdoNetManageContext>();
             var users = new List<User>();
             mockContext.Setup(x => x.Users).ReturnsDbSet(users);
-                     
-            var userRepository = new UserRepository(mockContext.Object);
+            var mockLogger = new Mock<ILogger<UserRepository>>();
+            var userRepository = new UserRepository(mockContext.Object, mockLogger.Object);
             // Act
             var result = await userRepository.Login("test@example.com", "test@example.com");
-
             // Assert
             Assert.Null(result);
         }
@@ -51,11 +46,10 @@ namespace TestOurShop
             var mocContext = new Mock<AdoNetManageContext>();
             var users = new List<User> { user };
             mocContext.Setup(x => x.Users).ReturnsDbSet(users);
-            var userRepository = new UserRepository(mocContext.Object);
-
+            var mockLogger = new Mock<ILogger<UserRepository>>();
+            var userRepository = new UserRepository(mocContext.Object, mockLogger.Object);
             // Act
             var result = await userRepository.Login(user.Email, "wrongPassword");
-
             // Assert
             Assert.Null(result);
         }
@@ -75,7 +69,8 @@ namespace TestOurShop
             var mockProductRepository = new Mock<IProductRepository>();
             mockProductRepository.Setup(x => x.GetProduct(It.IsAny<int>(), It.IsAny<int>(),It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int?[]>()))
                                  .ReturnsAsync(products);
-            var orderService = new OrderServices(mockOrderRepository.Object);
+            var mockLogger = new Mock<ILogger<OrderServices>>();
+            var orderService = new OrderServices(mockOrderRepository.Object, mockProductRepository.Object, mockLogger.Object);
 
             // Act
             var result = await orderService.AddOrder(order);
@@ -91,14 +86,25 @@ namespace TestOurShop
             // Arrange
             var mockOrderRepository = new Mock<IOrderRepository>();
             mockOrderRepository.Setup(x => x.AddOrder(It.IsAny<Order>())).ReturnsAsync((Order)null);
-
-            var orderService = new OrderServices(mockOrderRepository.Object);
+            var mockProductRepository = new Mock<IProductRepository>();
+            var mockLogger = new Mock<ILogger<OrderServices>>();
+            var orderService = new OrderServices(mockOrderRepository.Object, mockProductRepository.Object, mockLogger.Object);
 
             // Act
             var result = await orderService.AddOrder(null);
 
             // Assert
             Assert.Null(result); // Ensure the result is null
+        }
+
+        [Fact]
+        public void OrderServices_Ctor_AllDependencies()
+        {
+            var mockOrderRepository = new Mock<IOrderRepository>();
+            var mockProductRepository = new Mock<IProductRepository>();
+            var mockLogger = new Mock<ILogger<OrderServices>>();
+            var orderService = new OrderServices(mockOrderRepository.Object, mockProductRepository.Object, mockLogger.Object);
+            Assert.NotNull(orderService);
         }
     }
 }
