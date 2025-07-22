@@ -1,24 +1,27 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
-using Services;
-using Entits;
-using AutoMapper;
+﻿using AutoMapper;
 using DTO;
+using Entits;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Services;
+using System.Text.Json;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace OurShop.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
         IUserServices userServices;
         IMapper mapper;
-
-        public UsersController(IUserServices userServices, IMapper mapper)
+        private readonly IConfiguration _configuration;
+        public UsersController(IUserServices userServices, IMapper mapper, IConfiguration configuration)
         {
             this.userServices = userServices;
             this.mapper = mapper;
+            _configuration = configuration;
         }
 
 
@@ -102,11 +105,14 @@ namespace OurShop.Controllers
 
 
         [HttpPost("login")]
+        [AllowAnonymous]
+
         public async Task<ActionResult<User>> Login([FromQuery] string email, [FromQuery] string password)
         {
-            User newUser =await userServices.Login(email,password);
+           var (user, token) = await userServices.Login(email,password);
             //return (Ok(newUser));
-            return newUser != null ? Ok(newUser) : NoContent();
+            Response.Cookies.Append("jwt_token", token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Strict });
+            return user != null ? Ok(user) : NoContent();
             //using (StreamReader reader = System.IO.File.OpenText("M:\\webAPI\\OurShop\\OurShop\\Users.txt"))
             //{
             //    string? currentUserInFile;

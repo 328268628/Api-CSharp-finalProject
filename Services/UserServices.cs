@@ -1,20 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
-
-using Entits;
+﻿using Entits;
+using Microsoft.IdentityModel.Tokens;
 using Repository;
+using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using Zxcvbn;
-
+using Microsoft.Extensions.Configuration;
 
 namespace Services
 {
     public class UserServices : IUserServices
     {
         IUserRepository userRepository;
+        private readonly IConfiguration _configuration;
 
-        public UserServices(IUserRepository userRepository)
+        public UserServices(IUserRepository userRepository, IConfiguration configuration)
         {
             this.userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task<User> AddUser(User user)
@@ -42,9 +47,12 @@ namespace Services
 
         }
 
-        public async Task<User> Login(string email, string password)
+        public async Task<(User user, string token)> Login(string email, string password)
         {
-            return await userRepository.Login(email, password);
+            User user=await userRepository.Login(email, password);
+            var secretKey = _configuration["Jwt:Key"];
+            var token = GenerateJwtToken(user, secretKey);
+            return (user, token);
 
 
         }
@@ -61,6 +69,23 @@ namespace Services
 
             await userRepository.UpdateUser(id, userToUpdate);
 
+        }
+        public string GenerateJwtToken(User user, string secretKey)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(secretKey);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.FirstName)
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
     }

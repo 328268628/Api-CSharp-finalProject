@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Services;
-using Entits;
+﻿using AutoMapper;
 using DTO;
-using AutoMapper;
-using System.Reflection.Metadata.Ecma335;
+using Entits;
 using MailKit.Security;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Services;
+using System.Reflection.Metadata.Ecma335;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace OurShop.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class OrderController : ControllerBase
